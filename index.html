@@ -190,15 +190,15 @@
       document.getElementById('heroTitle').textContent = 'Find Your Dream Property in Rwanda';
       document.getElementById('heroTagline').textContent = settings.tagline;
 
-      const [properties, agents] = await Promise.all([getProperties(), getAgents()]);
+      const [properties, agents, users, orders] = await Promise.all([getProperties(), getAgents(), getUsers(), getOrders()]);
       const featured = properties.filter(p => p.featured);
       renderPropertiesGrid(featured, 'featuredProperties');
 
       document.getElementById('statsSection').innerHTML = `
-        <div class="stat-item"><div class="stat-number">${properties.length}+</div><div class="stat-label">Active Listings</div></div>
+        <div class="stat-item"><div class="stat-number">${properties.length}</div><div class="stat-label">Active Listings</div></div>
         <div class="stat-item"><div class="stat-number">${agents.length}</div><div class="stat-label">Expert Agents</div></div>
-        <div class="stat-item"><div class="stat-number">500+</div><div class="stat-label">Happy Clients</div></div>
-        <div class="stat-item"><div class="stat-number">10+</div><div class="stat-label">Years Experience</div></div>
+        <div class="stat-item"><div class="stat-number">${users.length}</div><div class="stat-label">Registered Users</div></div>
+        <div class="stat-item"><div class="stat-number">${orders.length}</div><div class="stat-label">Orders Placed</div></div>
       `;
       document.getElementById('agentsSection').innerHTML = agents.map(renderAgentCard).join('');
     })();
