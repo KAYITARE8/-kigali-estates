@@ -138,6 +138,18 @@ async function saveAdmin(data) {
   return apiFetch('/api/admin', { method: 'PUT', body: JSON.stringify(data) });
 }
 
+async function getAdminProfile() {
+  return apiFetch('/api/admin');
+}
+
+async function getUsers() {
+  return apiFetch('/api/users');
+}
+
+async function deleteUser(id) {
+  return apiFetch('/api/users/' + id, { method: 'DELETE' });
+}
+
 // ── Orders ────────────────────────────────────────────────
 async function placeOrder(data) {
   return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(data) });

@@ -25,7 +25,7 @@ function showSection(sectionId) {
   if (section) section.classList.add('active');
   const navLink = document.querySelector(`[data-section="${sectionId}"]`);
   if (navLink) navLink.classList.add('active');
-  const titles = { dashboard: 'Dashboard', properties: 'Manage Properties', agents: 'Manage Agents', inquiries: 'Inquiries', settings: 'Settings' };
+  const titles = { dashboard: 'Dashboard', properties: 'Manage Properties', agents: 'Manage Agents', inquiries: 'Inquiries', users: 'Registered Users', analytics: 'Analytics', settings: 'Settings', profile: 'My Profile' };
   const titleEl = document.getElementById('pageTitle');
   if (titleEl) titleEl.textContent = titles[sectionId] || 'Admin';
   if (sectionId === 'dashboard') renderDashboard();
@@ -33,6 +33,9 @@ function showSection(sectionId) {
   if (sectionId === 'agents') renderAgentsTable();
   if (sectionId === 'inquiries') renderInquiriesTable();
   if (sectionId === 'settings') loadSettingsForm();
+  if (sectionId === 'users') renderUsersTable();
+  if (sectionId === 'analytics') renderAnalytics();
+  if (sectionId === 'profile') loadProfileForm();
 }
 
 async function renderDashboard() {
@@ -259,6 +262,136 @@ async function confirmDeleteInquiry(id) {
     renderInquiriesTable();
     renderDashboard();
   }
+}
+
+async function renderUsersTable() {
+  const users = await getUsers();
+  document.getElementById('usersCount').textContent = `${users.length} total`;
+  document.getElementById('usersTable').innerHTML = users.length === 0
+    ? '<tr><td colspan="5" class="empty-table">No registered users yet.</td></tr>'
+    : users.map((u, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.email}</td>
+        <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+        <td><button class="btn btn-sm btn-danger" onclick="confirmDeleteUser('${u.id}')">Remove</button></td>
+      </tr>`).join('');
+}
+
+async function confirmDeleteUser(id) {
+  if (confirm('Remove this user account?')) {
+    await deleteUser(id);
+    renderUsersTable();
+    showAlert('User removed.', 'success');
+  }
+}
+
+async function renderAnalytics() {
+  const [properties, inquiries, orders, users] = await Promise.all([getProperties(), getInquiries(), getOrders(), getUsers()]);
+
+  document.getElementById('analyticsCards').innerHTML = `
+    <div class="dash-card primary"><div class="label">Total Properties</div><div class="value">${properties.length}</div></div>
+    <div class="dash-card"><div class="label">Total Users</div><div class="value">${users.length}</div></div>
+    <div class="dash-card accent"><div class="label">Total Orders</div><div class="value">${orders.length}</div></div>
+    <div class="dash-card"><div class="label">Total Inquiries</div><div class="value">${inquiries.length}</div></div>`;
+
+  // Properties by type
+  const byType = {};
+  properties.forEach(p => { byType[p.type] = (byType[p.type] || 0) + 1; });
+  renderBarChart('chartByType', byType, properties.length);
+
+  // Properties by status
+  const byStatus = { 'For Sale': 0, 'For Rent': 0 };
+  properties.forEach(p => { if (p.status === 'sale') byStatus['For Sale']++; else byStatus['For Rent']++; });
+  renderBarChart('chartByStatus', byStatus, properties.length);
+
+  // Inquiries by month
+  const byMonth = {};
+  inquiries.forEach(i => {
+    const m = new Date(i.date).toLocaleString('default', { month: 'short', year: '2-digit' });
+    byMonth[m] = (byMonth[m] || 0) + 1;
+  });
+  renderBarChart('chartInquiries', byMonth, Math.max(...Object.values(byMonth), 1));
+
+  // Orders by status
+  const byOrderStatus = {};
+  orders.forEach(o => { byOrderStatus[o.status] = (byOrderStatus[o.status] || 0) + 1; });
+  renderBarChart('chartOrders', byOrderStatus, orders.length || 1);
+}
+
+function renderBarChart(containerId, data, total) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const entries = Object.entries(data);
+  if (entries.length === 0) { el.innerHTML = '<div style="color:#94a3b8;padding:20px;text-align:center">No data yet</div>'; return; }
+  el.innerHTML = entries.map(([label, val]) => {
+    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+    return `<div class="bar-row">
+      <div class="bar-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <div class="bar-val">${val} (${pct}%)</div>
+    </div>`;
+  }).join('');
+}
+
+let profilePhotoData = null;
+
+async function loadProfileForm() {
+  const admin = await getAdminProfile();
+  document.getElementById('profileName').value = admin.name || '';
+  document.getElementById('profileEmail').value = admin.username || '';
+  document.getElementById('profileNameDisplay').textContent = admin.name || '';
+  document.getElementById('profileEmailDisplay').textContent = admin.username || '';
+  profilePhotoData = admin.photo || null;
+  const avatar = document.getElementById('profileAvatarPreview');
+  if (admin.photo) {
+    avatar.style.backgroundImage = `url(${admin.photo})`;
+    avatar.style.backgroundSize = 'cover';
+    avatar.textContent = '';
+  } else {
+    avatar.style.backgroundImage = '';
+    avatar.textContent = (admin.name || 'A').charAt(0).toUpperCase();
+  }
+  // also update top-bar avatar
+  const topAvatar = document.getElementById('adminAvatar');
+  if (topAvatar) {
+    if (admin.photo) { topAvatar.style.backgroundImage = `url(${admin.photo})`; topAvatar.style.backgroundSize = 'cover'; topAvatar.textContent = ''; }
+    else { topAvatar.style.backgroundImage = ''; topAvatar.textContent = (admin.name || 'A').charAt(0).toUpperCase(); }
+  }
+}
+
+function previewProfilePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    profilePhotoData = ev.target.result;
+    const avatar = document.getElementById('profileAvatarPreview');
+    avatar.style.backgroundImage = `url(${profilePhotoData})`;
+    avatar.style.backgroundSize = 'cover';
+    avatar.textContent = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfileForm(e) {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('profileName').value,
+    username: document.getElementById('profileEmail').value,
+    photo: profilePhotoData || ''
+  };
+  const pw = document.getElementById('profilePassword').value;
+  if (pw) data.password = pw;
+  await saveAdmin(data);
+  document.getElementById('profilePassword').value = '';
+  // update session name
+  const session = getSession();
+  if (session) { session.name = data.name; sessionStorage.setItem('ke_session', JSON.stringify(session)); }
+  document.getElementById('adminUserName').textContent = data.name;
+  showAlert('Profile updated successfully!', 'success');
+  loadProfileForm();
 }
 
 async function loadSettingsForm() {

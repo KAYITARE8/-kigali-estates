@@ -159,10 +159,28 @@ seed().then(() => {
   });
 
   app.put('/api/admin', async (req, res) => {
-    const { username, name, password } = req.body;
+    const { username, name, password, photo } = req.body;
     const update = { username, name };
     if (password) update.password = await bcrypt.hash(password, 10);
+    if (photo !== undefined) update.photo = photo;
     await db.admin.updateAsync({ _id: 'admin1' }, { $set: update });
+    res.json({ success: true });
+  });
+
+  app.get('/api/admin', async (req, res) => {
+    const doc = await db.admin.findOneAsync({ _id: 'admin1' });
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    const { password: _, ...safe } = doc;
+    res.json(safe);
+  });
+
+  app.get('/api/users', async (req, res) => {
+    const docs = await db.users.findAsync({}).sort({ createdAt: -1 });
+    res.json(docs.map(({ password: _, ...u }) => ({ ...u, id: u._id })));
+  });
+
+  app.delete('/api/users/:id', async (req, res) => {
+    await db.users.removeAsync({ _id: req.params.id });
     res.json({ success: true });
   });
 
