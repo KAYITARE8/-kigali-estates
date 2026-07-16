@@ -366,11 +366,21 @@ function previewProfilePhoto(e) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    profilePhotoData = ev.target.result;
-    const avatar = document.getElementById('profileAvatarPreview');
-    avatar.style.backgroundImage = `url(${profilePhotoData})`;
-    avatar.style.backgroundSize = 'cover';
-    avatar.textContent = '';
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 200;
+      const ratio = Math.min(MAX / img.width, MAX / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      profilePhotoData = canvas.toDataURL('image/jpeg', 0.8);
+      const avatar = document.getElementById('profileAvatarPreview');
+      avatar.style.backgroundImage = `url(${profilePhotoData})`;
+      avatar.style.backgroundSize = 'cover';
+      avatar.textContent = '';
+    };
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
