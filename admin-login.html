@@ -42,13 +42,13 @@
 
     async function handleLogin(e) {
       e.preventDefault();
-      const username = document.getElementById('username').value;
+      const email = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-      const ok = await login(username, password);
+      const ok = await login(email, password);
       if (ok) {
         window.location.href = 'admin.html';
       } else {
-        document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">Invalid username or password.</div>';
+        document.getElementById('loginAlert').innerHTML = '<div class="alert alert-error">Invalid email or password.</div>';
       }
     }
   </script>

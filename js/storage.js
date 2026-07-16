@@ -121,11 +121,14 @@ function userLogout() {
 }
 
 // ── Auth ──────────────────────────────────────────────────────
-async function login(username, password) {
+async function login(email, password) {
   try {
-    const data = await apiFetch('/api/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-    sessionStorage.setItem('ke_session', JSON.stringify({ username: data.username, name: data.name, loginTime: Date.now() }));
-    return true;
+    const data = await apiFetch('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+    if (data.role === 'admin') {
+      sessionStorage.setItem('ke_session', JSON.stringify({ username: data.username, name: data.name, loginTime: Date.now() }));
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
