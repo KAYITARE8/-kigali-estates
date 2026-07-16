@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: kigali-estates
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    disk:
+      name: ke-data
+      mountPath: /app/data
+      sizeGB: 1

@@ -247,10 +247,20 @@
         document.getElementById('suPassword').value
       );
       if (res.ok) {
+        // auto sign-in after registration
+        const loginRes = await userLogin(
+          document.getElementById('suEmail').value,
+          document.getElementById('suPassword').value
+        );
         document.getElementById('loginModal').classList.remove('active');
-        location.reload();
+        if (loginRes.ok && loginRes.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          location.reload();
+        }
       } else {
-        const msg = res.error.includes('409') || res.error.includes('already') ? 'Email already registered.' : 'Registration failed.';
+        let msg = 'Registration failed. Please try again.';
+        if (res.error && (res.error.includes('409') || res.error.includes('already'))) msg = 'Email already registered. Please sign in.';
         alertEl.innerHTML = `<div class="lm-error">${msg}</div>`;
       }
     }
