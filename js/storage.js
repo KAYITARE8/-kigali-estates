@@ -101,6 +101,27 @@ async function saveAdmin(data) {
   return apiFetch('/api/admin', { method: 'PUT', body: JSON.stringify(data) });
 }
 
+// ── Orders ────────────────────────────────────────────────
+async function placeOrder(data) {
+  return apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(data) });
+}
+
+async function getOrder(id) {
+  return apiFetch('/api/orders/' + id);
+}
+
+async function getOrders() {
+  return apiFetch('/api/orders');
+}
+
+async function updateOrderStatus(id, status) {
+  return apiFetch('/api/orders/' + id + '/status', { method: 'PUT', body: JSON.stringify({ status }) });
+}
+
+async function deleteOrder(id) {
+  return apiFetch('/api/orders/' + id, { method: 'DELETE' });
+}
+
 // ── Helpers ───────────────────────────────────────────────────
 function formatPrice(price, currency) {
   if (currency === 'RWF') {

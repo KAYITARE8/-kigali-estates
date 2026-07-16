@@ -104,6 +104,33 @@ seed().then(() => {
     res.json({ success: true });
   });
 
+  // ── Orders ─────────────────────────────────────────────────
+  app.post('/api/orders', async (req, res) => {
+    const doc = await db.orders.insertAsync({ _id: genId('ord'), ...req.body, createdAt: new Date().toISOString(), status: 'pending' });
+    res.json({ success: true, id: doc._id });
+  });
+
+  app.get('/api/orders/:id', async (req, res) => {
+    const doc = await db.orders.findOneAsync({ _id: req.params.id });
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    res.json({ ...doc, id: doc._id });
+  });
+
+  app.get('/api/orders', async (req, res) => {
+    const docs = await db.orders.findAsync({}).sort({ createdAt: -1 });
+    res.json(docs.map(d => ({ ...d, id: d._id })));
+  });
+
+  app.put('/api/orders/:id/status', async (req, res) => {
+    await db.orders.updateAsync({ _id: req.params.id }, { $set: { status: req.body.status } });
+    res.json({ success: true });
+  });
+
+  app.delete('/api/orders/:id', async (req, res) => {
+    await db.orders.removeAsync({ _id: req.params.id });
+    res.json({ success: true });
+  });
+
   // ── Auth ─────────────────────────────────────────────────────
   app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;

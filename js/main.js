@@ -18,6 +18,10 @@ function renderHeader(activePage, settings) {
         </a>
         <button class="nav-toggle" onclick="toggleNav()" aria-label="Menu">&#9776;</button>
         <nav class="nav" id="mainNav">${navLinks}</nav>
+        <a href="cart.html" class="cart-icon-btn" title="View Cart">
+          &#128722;
+          <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+        </a>
       </div>
     </header>`;
 }
@@ -77,19 +81,25 @@ function renderPropertyCard(property) {
   if (property.bathrooms > 0) meta.push(`<span>&#128705; ${property.bathrooms} Baths</span>`);
   meta.push(`<span>&#9632; ${property.area} m&sup2;</span>`);
   return `
-    <a href="property.html?id=${property.id}" class="property-card">
-      <div class="property-card-img">
-        <img src="${property.image}" alt="${property.title}" loading="lazy">
-        <span class="property-badge ${badgeClass}">${getStatusLabel(property.status)}</span>
-        <span class="badge-type">${getTypeLabel(property.type)}</span>
+    <div class="property-card">
+      <a href="property.html?id=${property.id}">
+        <div class="property-card-img">
+          <img src="${property.image}" alt="${property.title}" loading="lazy">
+          <span class="property-badge ${badgeClass}">${getStatusLabel(property.status)}</span>
+          <span class="badge-type">${getTypeLabel(property.type)}</span>
+        </div>
+        <div class="property-card-body">
+          <h3>${property.title}</h3>
+          <div class="property-price">${formatPrice(property.price, property.currency)}</div>
+          <div class="property-location">&#128205; ${property.location}</div>
+          <div class="property-meta">${meta.join('')}</div>
+        </div>
+      </a>
+      <div class="property-card-footer">
+        <a href="property.html?id=${property.id}" class="btn btn-outline btn-sm">View Details</a>
+        <button class="btn btn-primary btn-sm" onclick='addToCart(${JSON.stringify({id: property.id, title: property.title, price: property.price, currency: property.currency, image: property.image, status: property.status, location: property.location})})'>&#128722; Add to Cart</button>
       </div>
-      <div class="property-card-body">
-        <h3>${property.title}</h3>
-        <div class="property-price">${formatPrice(property.price, property.currency)}</div>
-        <div class="property-location">&#128205; ${property.location}</div>
-        <div class="property-meta">${meta.join('')}</div>
-      </div>
-    </a>`;
+    </div>`;
 }
 
 function renderPropertiesGrid(properties, containerId) {
@@ -180,5 +190,6 @@ async function initPage(activePage) {
   const footerEl = document.getElementById('site-footer');
   if (headerEl) headerEl.innerHTML = renderHeader(activePage, settings);
   if (footerEl) footerEl.innerHTML = renderFooter(settings);
+  if (typeof updateCartBadge === 'function') updateCartBadge();
   return settings;
 }

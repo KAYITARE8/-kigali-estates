@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - Kigali Estates</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-header">
+    <div class="container">
+      <h1>Checkout</h1>
+      <p>Complete your property booking request</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="checkout-layout">
+
+        <!-- Customer Info Form -->
+        <div>
+          <div class="checkout-section">
+            <h2>Customer Information</h2>
+            <form id="checkoutForm" onsubmit="handleCheckout(event)" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>First Name *</label>
+                  <input type="text" id="firstName" required placeholder="John">
+                  <span class="field-error" id="err-firstName"></span>
+                </div>
+                <div class="form-group">
+                  <label>Last Name *</label>
+                  <input type="text" id="lastName" required placeholder="Doe">
+                  <span class="field-error" id="err-lastName"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" id="email" required placeholder="john@example.com">
+                <span class="field-error" id="err-email"></span>
+              </div>
+              <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="tel" id="phone" required placeholder="+250 7XX XXX XXX">
+                <span class="field-error" id="err-phone"></span>
+              </div>
+              <div class="form-group">
+                <label>Address *</label>
+                <input type="text" id="address" required placeholder="KG 7 Ave, Kigali">
+                <span class="field-error" id="err-address"></span>
+              </div>
+              <div class="form-group">
+                <label>District *</label>
+                <select id="district" required>
+                  <option value="">Select District</option>
+                  <option>Gasabo</option>
+                  <option>Kicukiro</option>
+                  <option>Nyarugenge</option>
+                  <option>Musanze</option>
+                  <option>Huye</option>
+                  <option>Rubavu</option>
+                  <option>Other</option>
+                </select>
+                <span class="field-error" id="err-district"></span>
+              </div>
+              <div class="form-group">
+                <label>Payment Method *</label>
+                <select id="paymentMethod" required>
+                  <option value="">Select Payment Method</option>
+                  <option value="momo">MTN Mobile Money</option>
+                  <option value="airtel">Airtel Money</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="cash">Cash on Visit</option>
+                </select>
+                <span class="field-error" id="err-paymentMethod"></span>
+              </div>
+              <div class="form-group">
+                <label>Additional Notes</label>
+                <textarea id="notes" rows="3" placeholder="Any special requests or questions..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg" style="width:100%">&#10003; Place Order</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div>
+          <div class="summary-card">
+            <h2>Order Summary</h2>
+            <div id="checkoutItems"></div>
+            <div class="summary-row" style="margin-top:16px"><span>Subtotal</span><span id="subtotalVal"></span></div>
+            <div class="summary-row"><span>Service Fee</span><span>Free</span></div>
+            <div class="summary-row summary-total"><span>Total</span><span id="totalVal"></span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    (async () => {
+      await initPage('checkout.html');
+
+      const cart = getCart();
+      if (cart.length === 0) {
+        window.location.href = 'cart.html';
+        return;
+      }
+
+      // Render order summary
+      document.getElementById('checkoutItems').innerHTML = cart.map(item => `
+        <div class="checkout-item">
+          <img src="${item.image}" alt="${item.title}">
+          <div>
+            <div style="font-weight:600; font-size:14px">${item.title}</div>
+            <div style="font-size:12px; color:var(--gray)">Qty: ${item.qty}</div>
+          </div>
+          <div style="font-weight:600; font-size:14px; white-space:nowrap">${formatPrice(item.price * item.qty, item.currency)}</div>
+        </div>
+      `).join('');
+
+      const total = getCartTotal();
+      document.getElementById('subtotalVal').textContent = formatPrice(total, 'RWF');
+      document.getElementById('totalVal').textContent = formatPrice(total, 'RWF');
+    })();
+
+    function validate() {
+      const fields = ['firstName', 'lastName', 'email', 'phone', 'address', 'district', 'paymentMethod'];
+      let valid = true;
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        const err = document.getElementById('err-' + id);
+        if (!el.value.trim()) {
+          err.textContent = 'This field is required';
+          el.style.borderColor = 'var(--danger)';
+          valid = false;
+        } else if (id === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value)) {
+          err.textContent = 'Enter a valid email address';
+          el.style.borderColor = 'var(--danger)';
+          valid = false;
+        } else if (id === 'phone' && el.value.replace(/\s/g,'').length < 9) {
+          err.textContent = 'Enter a valid phone number';
+          el.style.borderColor = 'var(--danger)';
+          valid = false;
+        } else {
+          err.textContent = '';
+          el.style.borderColor = '';
+        }
+      });
+      return valid;
+    }
+
+    async function handleCheckout(e) {
+      e.preventDefault();
+      if (!validate()) return;
+
+      const cart = getCart();
+      const total = getCartTotal();
+
+      const order = {
+        customer: {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+          address: document.getElementById('address').value,
+          district: document.getElementById('district').value,
+        },
+        paymentMethod: document.getElementById('paymentMethod').value,
+        notes: document.getElementById('notes').value,
+        items: cart,
+        total: total,
+        status: 'pending'
+      };
+
+      try {
+        const result = await placeOrder(order);
+        clearCart();
+        window.location.href = 'confirmation.html?orderId=' + result.id;
+      } catch (err) {
+        alert('Failed to place order. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>

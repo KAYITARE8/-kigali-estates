@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart - Kigali Estates</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <div class="page-header">
+    <div class="container">
+      <h1>&#128722; Your Cart</h1>
+      <p>Review your selected properties before checkout</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="cart-layout" id="cartLayout">
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-summary" id="cartSummary"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    (async () => {
+      await initPage('cart.html');
+      renderCart();
+    })();
+
+    function renderCart() {
+      const cart = getCart();
+      const itemsEl = document.getElementById('cartItems');
+      const summaryEl = document.getElementById('cartSummary');
+
+      if (cart.length === 0) {
+        document.getElementById('cartLayout').innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1; padding:80px 0; text-align:center">
+            <div style="font-size:64px">&#128722;</div>
+            <h3>Your cart is empty</h3>
+            <p>Browse our properties and add some to your cart.</p>
+            <a href="properties.html" class="btn btn-primary btn-lg" style="margin-top:20px">Browse Properties</a>
+          </div>`;
+        return;
+      }
+
+      itemsEl.innerHTML = `
+        <div class="cart-header-row">
+          <h2>Cart Items (${cart.length})</h2>
+          <button class="btn btn-outline btn-sm" onclick="clearCart(); renderCart()">Clear All</button>
+        </div>
+        ${cart.map(item => `
+          <div class="cart-item">
+            <img src="${item.image}" alt="${item.title}">
+            <div class="cart-item-info">
+              <h3>${item.title}</h3>
+              <p>&#128205; ${item.location}</p>
+              <span class="property-badge ${item.status === 'sale' ? 'badge-sale' : 'badge-rent'}" style="position:static; display:inline-block; margin-top:4px">${getStatusLabel(item.status)}</span>
+            </div>
+            <div class="cart-item-qty">
+              <label>Qty</label>
+              <div class="qty-controls">
+                <button onclick="updateQty('${item.id}', ${item.qty - 1}); renderCart()">&#8722;</button>
+                <span>${item.qty}</span>
+                <button onclick="updateQty('${item.id}', ${item.qty + 1}); renderCart()">&#43;</button>
+              </div>
+            </div>
+            <div class="cart-item-price">
+              <div class="price">${formatPrice(item.price * item.qty, item.currency)}</div>
+              <small style="color:var(--gray)">${formatPrice(item.price, item.currency)} each</small>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart('${item.id}'); renderCart()" title="Remove">&#10005;</button>
+          </div>
+        `).join('')}`;
+
+      const total = getCartTotal();
+      summaryEl.innerHTML = `
+        <div class="summary-card">
+          <h2>Order Summary</h2>
+          <div class="summary-row"><span>Items (${getCartCount()})</span><span>${formatPrice(total, 'RWF')}</span></div>
+          <div class="summary-row"><span>Service Fee</span><span>Free</span></div>
+          <div class="summary-row summary-total"><span>Total</span><span>${formatPrice(total, 'RWF')}</span></div>
+          <a href="checkout.html" class="btn btn-primary btn-lg" style="width:100%; margin-top:16px; text-align:center">Proceed to Checkout</a>
+          <a href="properties.html" class="btn btn-outline btn-lg" style="width:100%; margin-top:10px; text-align:center">Continue Browsing</a>
+        </div>`;
+    }
+  </script>
+</body>
+</html>
