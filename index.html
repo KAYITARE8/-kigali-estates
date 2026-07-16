@@ -138,6 +138,29 @@
   <script src="js/storage.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/main.js"></script>
+
+  <!-- Login Modal -->
+  <div class="modal-overlay" id="loginModal" onclick="if(event.target===this)this.classList.remove('active')">
+    <div class="login-modal-card">
+      <div class="login-modal-logo">
+        <div class="login-modal-icon">KE</div>
+        <h2>Admin Login</h2>
+      </div>
+      <div id="loginModalAlert"></div>
+      <form onsubmit="handleModalLogin(event)">
+        <div class="lm-group">
+          <label>Username</label>
+          <input type="text" id="lmUsername" required autocomplete="username">
+        </div>
+        <div class="lm-group">
+          <label>Password</label>
+          <input type="password" id="lmPassword" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="lm-btn">Sign In</button>
+      </form>
+      <button class="lm-close" onclick="document.getElementById('loginModal').classList.remove('active')">&times;</button>
+    </div>
+  </div>
   <script>
     (async () => {
       const settings = await initPage('index.html');
@@ -169,6 +192,21 @@
       if (district) params.set('district', district);
       if (maxPrice) params.set('maxPrice', maxPrice);
       window.location.href = 'properties.html?' + params.toString();
+    }
+
+    async function handleModalLogin(e) {
+      e.preventDefault();
+      const alertEl = document.getElementById('loginModalAlert');
+      alertEl.innerHTML = '';
+      const ok = await login(
+        document.getElementById('lmUsername').value,
+        document.getElementById('lmPassword').value
+      );
+      if (ok) {
+        window.location.href = 'admin.html';
+      } else {
+        alertEl.innerHTML = '<div class="lm-error">Invalid username or password.</div>';
+      }
     }
   </script>
 </body>

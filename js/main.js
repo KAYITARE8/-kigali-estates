@@ -22,6 +22,7 @@ function renderHeader(activePage, settings) {
           &#128722;
           <span class="cart-badge" id="cartBadge" style="display:none">0</span>
         </a>
+        <button class="btn-login-header" onclick="document.getElementById('loginModal').classList.add('active')" title="Admin Login">&#128274; Login</button>
       </div>
     </header>`;
 }

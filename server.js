@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
@@ -134,15 +135,15 @@ seed().then(() => {
   // ── Auth ─────────────────────────────────────────────────────
   app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    const admin = await db.admin.findOneAsync({ username, password });
-    if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
+    const admin = await db.admin.findOneAsync({ username });
+    if (!admin || !(await bcrypt.compare(password, admin.password))) return res.status(401).json({ error: 'Invalid credentials' });
     res.json({ success: true, name: admin.name, username: admin.username });
   });
 
   app.put('/api/admin', async (req, res) => {
     const { username, name, password } = req.body;
     const update = { username, name };
-    if (password) update.password = password;
+    if (password) update.password = await bcrypt.hash(password, 10);
     await db.admin.updateAsync({ _id: 'admin1' }, { $set: update });
     res.json({ success: true });
   });

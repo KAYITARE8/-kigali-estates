@@ -41,7 +41,9 @@ async function seed() {
 
   const adminCount = await db.admin.countAsync({});
   if (adminCount === 0) {
-    await db.admin.insertAsync({ _id: 'admin1', username: 'admin', password: 'admin123', name: 'Administrator' });
+    const bcrypt = require('bcryptjs');
+    const hashed = await bcrypt.hash('admin123', 10);
+    await db.admin.insertAsync({ _id: 'admin1', username: 'admin', password: hashed, name: 'Administrator' });
   }
 }
 
