@@ -108,16 +108,18 @@ seed().then(() => {
   // ── Orders ─────────────────────────────────────────────────
   app.post('/api/orders', async (req, res) => {
     const doc = await db.orders.insertAsync({ _id: genId('ord'), ...req.body, createdAt: new Date().toISOString(), status: 'pending' });
-    // also create an inquiry so admin sees it
     const d = req.body;
+    const c = d.customer || {};
+    const fullName = `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unknown';
+    const propertyNames = d.items && d.items.length ? d.items.map(i => i.title).join(', ') : 'Order';
     await db.inquiries.insertAsync({
       _id: genId('i'),
-      name: d.firstName + ' ' + d.lastName,
-      email: d.email,
-      phone: d.phone,
-      message: `ORDER #${doc._id} — Payment: ${d.paymentMethod}. Address: ${d.address}, ${d.district}.${d.notes ? ' Notes: ' + d.notes : ''}`,
-      propertyTitle: d.items && d.items.length ? d.items.map(i => i.title).join(', ') : 'Order',
-      property_title: d.items && d.items.length ? d.items.map(i => i.title).join(', ') : 'Order',
+      name: fullName,
+      email: c.email || '',
+      phone: c.phone || '',
+      message: `ORDER #${doc._id} — Payment: ${d.paymentMethod || '-'}. Address: ${c.address || ''}, ${c.district || ''}.${d.notes ? ' Notes: ' + d.notes : ''}`,
+      propertyTitle: propertyNames,
+      property_title: propertyNames,
       is_read: false,
       date: new Date().toISOString()
     });
